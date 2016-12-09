@@ -32,8 +32,13 @@ This library is very early in development, expect bugs and missing functionality
     }
 
 ## TODO
+  - Implement Resume / Reconnect functionality (IMPORTANT)
   - Populate `APIHTTP.hx` with all the end points
-  - Properly test the endpoints and data class creation
+  - Create the `Embed` data class
+  - Properly create the `Permissions` and `Colour` data classes
+  - Parse timestamps / datetimes
+  - Properly test the dispatch events and data class creation
   - Properly test the `APIHTTP.hx` endpoints
   - Document all of the packages, with examples and text cases
+  - Create a command framework
 
