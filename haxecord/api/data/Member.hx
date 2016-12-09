@@ -3,11 +3,19 @@ package haxecord.api.data;
 typedef MemberPackage = {
 	var user:Dynamic;
 	@:optional var nick:String;
-	var roles:Array<Dynamic>;
+	var roles:Array<String>;
 	var joined_at:String;
 	var deaf:Bool;
 	var mute:Bool;
 }
+
+typedef MemberUpdatePackage = {
+	var roles:Array<String>;
+	var user:Dynamic;
+	var nick:String;
+}
+
+
 
 /**
  * ...
@@ -15,6 +23,8 @@ typedef MemberPackage = {
  */
 class Member extends User
 {
+	
+	
 	public var nick(default, null):String;
 	public var roles(default, null):Array<Role>;
 	public var joined_at(default, null):String; // TODO: parse datetime
@@ -46,4 +56,17 @@ class Member extends User
 		this.mute = data.mute;
 	}
 	
+	public function updateMemberData(data:MemberUpdatePackage)
+	{
+		parseData(data.user);
+		this.nick = data.nick;
+		
+		this.roles = new Array<Role>();
+		for (role in this.guild.roles) {
+			if (data.roles.indexOf(role.id) != -1) {
+				this.roles.push(role);
+				break;
+			}
+		}
+	}
 }

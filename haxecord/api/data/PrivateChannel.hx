@@ -1,9 +1,9 @@
 package haxecord.api.data;
 
 typedef PrivateChannelPackage = {
-	var id:String,
-	var recipient:Dynamic,
-	var last_message_id:String
+	var id:String;
+	var recipient:Dynamic;
+	var last_message_id:String;
 }
 
 /**
@@ -23,7 +23,11 @@ class PrivateChannel extends BaseChannel
 	
 	private function parseData(data:PrivateChannelPackage) {
 		this.id = data.id;
-		this.user = new User(data.recipient);
+		try {
+			this.user = new User(data.recipient);
+		} catch ( source:Dynamic ) {
+			this.user = null;
+		}
 		this.lastMessageID = data.last_message_id;
 	}
 	

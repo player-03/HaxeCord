@@ -26,9 +26,9 @@ class VoiceRegion
 	public var deprecated(default, null):Bool;
 	public var custom(default, null):Bool;
 
-	public function new() 
+	public function new(data:Dynamic) 
 	{
-		
+		parseData(data);
 	}
 	
 	private function parseData(data:VoiceRegionPackage)

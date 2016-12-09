@@ -12,9 +12,7 @@ typedef ChannelPackage = {
 	var last_message_id:String;
 }
 
-typedef VoiceChannelCheck = {
-	var type:String;
-}
+
 
 /**
  * ...
@@ -30,14 +28,6 @@ class Channel extends BaseChannel
 	public var topic(default, null):String;
 	public var lastMessageID(default, null):String;
 	
-	public static function isVoiceChannel(data:Dynamic):Bool {
-		var check:VoiceChannelCheck = data;
-		if (check.type == "text") {
-			return false;
-		}
-		return true;
-	}
-
 	public function new(guild:Guild, data:Dynamic) 
 	{
 		this.channelType = BaseChannel.ChannelType.TEXT;
@@ -52,12 +42,31 @@ class Channel extends BaseChannel
 		this.position = data.position;
 		
 		this.permissionOverwrites = new Array<PermissionOverwrite>();
-		for (rawOverwrite in data.premission_overwrites) {
-			this.permissionOverwrites.push(new PermissionOverwrite(rawOverwrite));
+		if (data.premission_overwrites != null) {
+			for (rawOverwrite in data.premission_overwrites) {
+				this.permissionOverwrites.push(new PermissionOverwrite(rawOverwrite));
+			}
 		}
 		
 		this.topic = data.topic;
 		this.lastMessageID = data.last_message_id;
+	}
+	
+	public function updateData(data:ChannelPackage)
+	{
+		if (data.id != null) this.id = data.id;
+		if (data.name != null) this.name = data.name;
+		if (data.position != null) this.position = data.position;
+		
+		if (data.premission_overwrites != null) {
+			this.permissionOverwrites = new Array<PermissionOverwrite>();
+			for (rawOverwrite in data.premission_overwrites) {
+				this.permissionOverwrites.push(new PermissionOverwrite(rawOverwrite));
+			}
+		}
+		
+		if (data.topic != null) this.topic = data.topic;
+		if (data.last_message_id != null) this.lastMessageID = data.last_message_id;
 	}
 	
 }

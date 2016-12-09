@@ -33,12 +33,48 @@ typedef GuildPackage = {
 	@:optional var presences:Array<Dynamic>;
 }
 
+typedef GuildUnavilableCheck = {
+	@:optional var unavailable:Bool;
+}
+
+typedef GuildEmojiUpdate = {
+	var emojis:Array<Dynamic>;
+}
+
+typedef GuildMemberUpdateHelper = {
+	var user:Dynamic;
+}
+
+typedef GuildLoadMembers = {
+	var members:Array<Dynamic>;
+}
+
+typedef GuildRoleCreate = {
+	var role:Dynamic;
+}
+
+typedef VoiceServerUpdatePackage = {
+	var token:String;
+	var endpoint:String;
+}
+
+typedef PresenceUpdatePackage = {
+	@:optional var user:Dynamic;
+	@:optional var roles:Array<String>;
+	@:optional var game:Dynamic;
+	@:optional var status:String;
+}
+
 /**
  * ...
  * @author Billyoyo
  */
 class Guild
 {
+	public static function guildUnavailable(data:GuildUnavilableCheck){
+		return data.unavailable;
+	}
+	
 	public var unavailable(default, null):Bool;
 	public var id(default, null):String;
 	public var name(default, null):String;
@@ -107,15 +143,17 @@ class Guild
 	public var members(default, null):Array<Member>;
 	public var channels(default, null):Array<Channel>;
 	public var voiceChannels(default, null):Array<VoiceChannel>;
-	public var presences(default, null):Array<Dynamic>; // TODO: fill with presence updates
 	public var voiceStates(default, null):Array<VoiceState>;
+	
+	public var voiceEndpoint(default, null):String;
+	public var voiceToken(default, null):String;
 
 	public function new(data:Dynamic) 
 	{
 		parseData(data);
 	}
 	
-	private function parseData(rawData:Dynamic)
+	public function parseData(rawData:Dynamic)
 	{
 		var unvailableCheck:UnavailableGuild = rawData;
 		if (unvailableCheck.unavailable != null && unvailableCheck.unavailable) {
@@ -137,13 +175,17 @@ class Guild
 			this.defaultMessageNotifs = data.default_message_notifications;
 			
 			this.roles = new Array<Role>();
-			for (rawRole in data.roles) {
-				this.roles.push(new Role(rawRole));
+			if (data.roles != null) {
+				for (rawRole in data.roles) {
+					this.roles.push(new Role(rawRole));
+				}
 			}
 			
 			this.emojis = new Array<Emoji>();
-			for (rawEmoji in data.emojis) {
-				this.emojis.push(new Emoji(rawEmoji));
+			if (data.emojis != null) {
+				for (rawEmoji in data.emojis) {
+					this.emojis.push(new Emoji(rawEmoji));
+				}
 			}
 			
 			this.features = data.features;
@@ -155,28 +197,148 @@ class Guild
 				this.large = data.large;
 				
 				this.members = new Array<Member>();
-				for (rawMember in data.members) {
-					this.members.push(new Member(this, rawMember));
-				}
-				
-				this.channels = new Array<Channel>();
-				for (rawChannel in data.channels) {
-					if (Channel.isVoiceChannel(rawChannel)) {
-						this.voiceChannels.push(new VoiceChannel(this, rawChannel));
-					} else {
-						this.channels.push(new Channel(this, rawChannel));
+				if (data.members != null) {
+					for (rawMember in data.members) {
+						this.members.push(new Member(this, rawMember));
 					}
 				}
 				
-				this.presences = data.presences; // TODO: parse presences
+				this.channels = new Array<Channel>();
+				if (data.channels != null) {
+					for (rawChannel in data.channels) {
+						if (BaseChannel.isVoiceChannel(rawChannel)) {
+							this.voiceChannels.push(new VoiceChannel(this, rawChannel));
+						} else {
+							this.channels.push(new Channel(this, rawChannel));
+						}
+					}
+				}
 				
 				this.voiceStates = new Array<VoiceState>();
-				for (rawVoiceState in data.voice_states)
-				{
-					this.voiceStates.push(new VoiceState(this, rawVoiceState));
+				if (data.voice_states != null) {
+					for (rawVoiceState in data.voice_states)
+					{
+						this.voiceStates.push(new VoiceState(this, rawVoiceState));
+					}
+				}
+				
+				if (data.presences != null) {
+					for (presenceUpdate in data.presences) {
+						updatePresence(presenceUpdate);
+					}
 				}
 			}
 		}
+	}
+	
+	public function updatePresence(data:PresenceUpdatePackage):Member
+	{
+		if (data.user != null) {
+			var userID:String = BaseChannel.getID(data.user);
+			for (member in members)
+			{
+				if (member.id == userID) {
+					if (data.game != null) member.updateGame(data.game);
+					if (data.status != null) member.updateStatus(User.getStatus(data.status));
+					return member;
+				}
+			}
+		}
+		return null;
+	}
+	
+	public function updateVoiceState(data:Dynamic):VoiceState
+	{
+		var voiceState:VoiceState = getVoiceState(User.getUserID(data));
+		if (voiceState != null) {
+			voiceState.updateVoiceState(data);
+		} else {
+			voiceState = new VoiceState(this, data);
+			voiceStates.push(voiceState);
+		}
+		return voiceState;
+	}
+	
+	public function updateVoiceServer(data:VoiceServerUpdatePackage) {
+		this.voiceEndpoint = data.endpoint;
+		this.voiceToken = data.token;
+	}
+	
+	public function updateEmojis(data:GuildEmojiUpdate) {
+		this.emojis = new Array<Emoji>();
+		for (rawEmoji in data.emojis) {
+			this.emojis.push(new Emoji(rawEmoji));
+		}
+	}
+	
+	public function updateMember(data:Dynamic):Member {
+		var helper:GuildMemberUpdateHelper = data;
+		var member:Member = getMember(BaseChannel.getID(helper.user));
+		if (member != null) {
+			member.updateMemberData(data);
+		}
+		return member;
+	}
+	
+	public function loadMembersChunk(data:GuildLoadMembers) {
+		for (rawMember in data.members) {
+			members.push(new Member(this, rawMember));
+		}
+	}
+	
+	public function createRole(data:GuildRoleCreate):Role {
+		var role:Role = new Role(data.role);
+		roles.push(role);
+		return role;
+	}
+	
+	public function updateRole(data:GuildRoleCreate):Role {
+		var role:Role = getRole(BaseChannel.getID(data.role));
+		if (role != null) {
+			role.parseData(data.role);
+		}
+		return role;
+	}
+	
+	
+	public function getChannel(id:String):Channel
+	{
+		for (channel in channels) {
+			if (channel.id == id) return channel;
+		}
+		return null;
+	}
+	
+	public function getVoiceChannel(id:String):VoiceChannel
+	{
+		for (voiceChannel in voiceChannels) {
+			if (voiceChannel.id == id) return voiceChannel;
+		}
+		return null;
+	}
+	
+	public function getMember(id:String):Member
+	{
+		for (member in members) {
+			if (member.id == id) return member;
+		}
+		return null;
+	}
+	
+	public function getRole(id:String):Role
+	{
+		for (role in roles) {
+			if (role.id == id) return role;
+		}
+		return null;
+	}
+	
+	public function getVoiceState(userid:String):VoiceState
+	{
+		for (vc in voiceStates) {
+			if (vc.member.id == userid) return vc;
+		}
+		return null;
 	}
 	
 }

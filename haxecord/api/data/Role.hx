@@ -11,12 +11,20 @@ typedef RolePackage = {
 	var mentionable:Bool;
 }
 
+typedef RoleIDGetter = {
+	var role_id:String;
+}
+
 /**
  * ...
  * @author Billyoyo
  */
 class Role
 {
+	public static function getRoleID(data:RoleIDGetter) {
+		return data.role_id;
+	}
+	
 	public var id(default, null):String;
 	public var name(default, null):String;
 	public var colour(default, null):Colour;
@@ -31,7 +39,7 @@ class Role
 		parseData(data);
 	}
 	
-	private function parseData(data:RolePackage)
+	public function parseData(data:RolePackage)
 	{
 		this.id = data.id;
 		this.name = data.name;

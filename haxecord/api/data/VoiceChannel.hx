@@ -33,7 +33,7 @@ class VoiceChannel extends BaseChannel
 		parseData(data);
 	}
 	
-	public function parseData(data:VoiceChannelPackage)
+	private function parseData(data:VoiceChannelPackage)
 	{
 		this.id = data.id;
 		this.name = data.name;
@@ -46,6 +46,23 @@ class VoiceChannel extends BaseChannel
 		
 		this.bitrate = data.bitrate;
 		this.userLimit = data.user_limit;
+	}
+	
+	public function updateData(data:VoiceChannelPackage)
+	{
+		if (data.id != null) this.id = data.id;
+		if (data.name != null) this.name = data.name;
+		if (data.position != null) this.position = data.position;
+		
+		if (data.permission_overwrites != null) {
+			this.permissionOverwrites = new Array<PermissionOverwrite>();
+			for (rawOverwrite in data.permission_overwrites) {
+				this.permissionOverwrites.push(new PermissionOverwrite(rawOverwrite));
+			}
+		}
+		
+		if (data.bitrate != null) this.bitrate = data.bitrate;
+		if (data.user_limit != null) this.userLimit = data.user_limit;
 	}
 	
 }

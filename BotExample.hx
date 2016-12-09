@@ -13,7 +13,7 @@ class BotExample extends APIEventListener
 	override public function onMessage(message:Message):Void 
 	{
 		if (message.content == "!ping") {
-			client.sendMessage("247794820544724992", "pong!").send();
+			client.sendMessage(message.channel.id, "pong!").send();
 		}
 	}
 

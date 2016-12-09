@@ -1,5 +1,11 @@
 package haxecord.api;
 import haxecord.api.APIEventListener;
+import haxecord.api.data.Channel;
+import haxecord.api.data.Member;
+import haxecord.api.data.User;
+import haxecord.api.data.PrivateChannel;
+import haxecord.api.data.Guild;
+import haxecord.api.data.VoiceChannel;
 import haxecord.async.EventLoop;
 import haxecord.api.APIWebSocket;
 import haxecord.async.Future;
@@ -8,7 +14,10 @@ import haxecord.http.HTTP;
 import haxecord.http.HTTPException;
 import haxecord.http.HTTPRequest;
 import haxecord.http.HTTPResponse;
+import haxecord.api.data.Message;
 import haxe.Json;
+
+
 
 /**
  * ...
@@ -16,29 +25,62 @@ import haxe.Json;
  */
 class Client implements FutureFactory
 {
-	public var token:String;
-	private var shard:Int;
-	private var shardCount:Int;
+	public var token(default, null):String;
+	public var shard(default, null):Int;
+	public var shardCount(default, null):Int;
 	private var websocket:APIWebSocket;
-	private var loop:EventLoop;
-	public var http:HTTP;
+	public var loop(default, null):EventLoop;
+	public var http(default, null):APIHTTP;
 	private var tempListeners:Array<APIEventListener> = new Array<APIEventListener>();
 	private var boundFuture:Future;
-
-	public function new() 
+	
+	private var messageHistory:Map<String, Message> = new Map<String, Message>();
+	private var messageOrder:Array<String> = new Array<String>();
+	private var messageHistoryLimit:Int = 100000;
+	
+	public var me:User;
+	public var privateChannels:Map<String,PrivateChannel> = new Map<String, PrivateChannel>();
+	public var guilds:Map<String,Guild> = new Map<String,Guild>();
+	
+	public var sessionID(default, null):String;
+	
+	private function min(x:Int, y:Int):Int 
 	{
+		if (x < y) return x;
+		else return y;
+	}
+
+	public function new(?messageLimit:Int) 
+	{
+		if (messageLimit != null) messageHistoryLimit = min(100, messageLimit);
 		loop = new EventLoop();
-		http = new HTTP(loop);
+		http = new APIHTTP(this, loop);
 	}
 	
-	public function sendMessage(destination:String, message:String):Future
+	public function storeMessage(message:Message)
 	{
-		var future:Future = http.post('https://discordapp.com/api/channels/$destination/messages', {
-			"headers" :  [ "Authorization" => 'Bot $token' ],
-			"json" : { "content" : message },
-			"onComplete" : function(req:HTTPRequest, resp:HTTPResponse) { trace('got response $resp'); },
-			"onError": function(req:HTTPRequest, error:HTTPException) { trace('request errored $error'); }
-		});
+		messageHistory.set(message.id, message);
+		messageOrder.push(message.id);
+		if (messageOrder.length >= messageHistoryLimit) {
+			var oldestMessage:String = messageOrder.shift();
+			messageHistory.remove(oldestMessage);
+		}
+	}
+	
+	public function unstoreMessage(message:Message)
+	{
+		messageHistory.remove(message.id);
+		messageOrder.remove(message.id);
+	}
+	
+	public function getMessage(id:String)
+	{
+		return messageHistory.get(id);
+	}
+	
+	public function sendMessage(destination:String, message:String, ?callback:Void->Void, ?error:HTTPException->Void):Future
+	{
+		var future:Future = http.sendChannelMessage(destination, message, callback, error);
 		if (boundFuture != null) boundFuture.setChild(future);
 		future.factory = this;
 		return future;
@@ -64,6 +106,38 @@ class Client implements FutureFactory
 		return this;
 	}
 	
+	public function getGuild(id:String):Guild {
+		return guilds.get(id);
+	}
+	
+	public function getMembers(id:String):Array<Member> {
+		var members:Array<Member> = new Array<Member>();
+		var member:Member;
+		for (guild in guilds) {
+			member = guild.getMember(id);
+			if (member != null) members.push(member);
+		}
+		return members;
+	}
+	
+	public function getChannel(id:String):Channel {
+		var channel:Channel;
+		for (guild in guilds) {
+			channel = guild.getChannel(id);
+			if (channel != null) break;
+		}
+		return channel;
+	}
+	
+	public function getVoiceChannel(id:String):VoiceChannel {
+		var channel:VoiceChannel = null;
+		for (guild in guilds) {
+			var channel = guild.getVoiceChannel(id);
+			if (channel != null) break;
+		}
+		return channel; 
+	}
+	
 	public function getToken() {
 		return token;
 	}
@@ -74,6 +148,10 @@ class Client implements FutureFactory
 	
 	public function getShard() {
 		return shard;
+	}
+	
+	public function setSession(session:String) {
+		sessionID = session;
 	}
 	
 	public function run(token:String, ?shard:Int, ?shardCount:Int) {
