@@ -1,5 +1,6 @@
 # HaxeCord
-Discord API for Haxe with neko.
+Discord API for Haxe with neko (it should also work with python, java, macro, cpp, lua and php but these are untested)
+
 ##WARNING
 This library is very early in development, expect bugs and missing functionality.
 
