@@ -9,6 +9,7 @@ This library is very early in development, expect bugs and missing functionality
   - `http` implementation of https://github.com/yupswing/akifox-asynchttp using the `async` package
   - `nekows` websocket library using the `async` package
   - `api` discord api package
+  - `utils` miscellaneous helper classes 
 
 
 ## Basic example
@@ -33,13 +34,10 @@ This library is very early in development, expect bugs and missing functionality
     }
 
 ## TODO
-  - Implement Resume / Reconnect functionality (IMPORTANT)
-  - Populate `APIHTTP.hx` with all the end points
   - Create the `Embed` data class
   - Properly create the `Permissions` and `Colour` data classes
-  - Parse timestamps / datetimes
   - Properly test the dispatch events and data class creation
   - Properly test the `APIHTTP.hx` endpoints
-  - Document all of the packages, with examples and text cases
+  - Document all of the packages, with examples and test cases
   - Create a command framework
 
