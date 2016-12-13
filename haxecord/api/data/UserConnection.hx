@@ -2,11 +2,11 @@ package haxecord.api.data;
 import haxecord.api.data.Integration.IntegrationPackage;
 
 typedef UserConnectionPackage = {
-	var id:String,
-	var name:String,
-	var type:String,
-	var revoked:Bool,
-	var integrations:Array<Dynamic>
+	var id:String;
+	var name:String;
+	var type:String;
+	var revoked:Bool;
+	var integrations:Array<Dynamic>;
 }
 
 /**

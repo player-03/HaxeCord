@@ -17,6 +17,7 @@ import haxecord.http.URL;
 import haxecord.nekows.AsyncWebSocket;
 import haxecord.nekows.WebSocket;
 import haxecord.nekows.WebSocketMessage;
+import haxecord.utils.DateTime;
 
 
 typedef BaseResponse = {
@@ -60,17 +61,23 @@ class APIWebSocket
 	private var client:Client;
 	private var protocol:Int;
 	
+	private var shouldResume:Bool = false;
+	private var resumeAttempts:Int = 0;
+	
 	public function new(client:Client, url:String, ?origin:String, ?timeperiod:Float) 
 	{
 		this.client = client;
 		websocket = new AsyncWebSocket(new URL(url), origin, timeperiod);
+		
 		// handle heartbeat
 		websocket.onUpdate = function(ws:WebSocket):Void {
 			if (heartbeatInterval != null) {
-				if (Sys.cpuTime() - lastHeartbeat >= heartbeatInterval) {
+				var left:Float = heartbeatInterval + lastHeartbeat - Sys.time();
+				if (Sys.time() - lastHeartbeat >= heartbeatInterval) {
 					sendHeartbeat();
+					lastHeartbeat = Sys.time();
 				}
-			}
+			} else {  }
 		};
 		// handle messages
 		websocket.onMessage = function(msg:WebSocketMessage):Void {
@@ -88,30 +95,41 @@ class APIWebSocket
 			trace('error encountered in websocket: $source');
 		};
 		websocket.onClose = function(ws:WebSocket):Bool {
-			if (!websocketFuture.isDone()) return true;
-			trace("websocket closing");
-			return false;
+			resumeAttempts += 1;
+			return (resumeAttempts < 3 && shouldResume);
 		};
 		websocket.onConnect = function(ws:WebSocket):Void {
-			// no logic for onConnect yet
+			
 		};
 		websocket.onHandshake = function(ws:WebSocket):Void {
-			websocket.sendJson({
-				"op" : 2,
-				"d" : {
-						"token" : client.getToken(),
-						"large_threshold" : 250,
-						"compress" : false,
-						"shard" : [client.getShard(), client.getShardCount()],
-						"properties" : {
-								"$os" : "Windows",
-								"$browser" : "HaxeCord",
-								"$device" : "HaxeCord",
-								"$referrer" : "",
-								"$referring_domain" : ""
-						}
-				}
-			});
+			if (!shouldResume) {
+				websocket.sendJson({
+					"op" : 2,
+					"d" : {
+							"token" : client.getToken(),
+							"large_threshold" : 250,
+							"compress" : false,
+							"shard" : [client.getShard(), client.getShardCount()],
+							"properties" : {
+									"$os" : "Windows",
+									"$browser" : "HaxeCord",
+									"$device" : "HaxeCord",
+									"$referrer" : "",
+									"$referring_domain" : ""
+							}
+					}
+				});
+				shouldResume = true;
+			} else {
+				websocket.sendJson({
+					"op": 6,
+					"d" : {
+						"token": client.getToken(),
+						"session_id": client.sessionID,
+						"seq": heartbeatSequence
+					}
+				});
+			}
 		}
 		
 	}
@@ -122,6 +140,7 @@ class APIWebSocket
 	}
 	
 	private function sendHeartbeat() {
+		trace('sending sequence : $heartbeatSequence');
 		websocket.sendJson({"op": 1, "d" : heartbeatSequence});
 	}
 	
@@ -165,6 +184,9 @@ class APIWebSocket
 			
 			client.setSession(ready.session_id);
 			for (listener in listeners) { listener.onReady(); }
+		} else if (event == EventType.RESUMED) {
+			resumeAttempts = 0;
+			for (listener in listeners) { listener.onResume(); }
 		} else if (event == EventType.CHANNEL_CREATE) {
 			var channel:BaseChannel;
 			if (BaseChannel.isPrivateChannel(data)) {
@@ -357,10 +379,12 @@ class APIWebSocket
 		} else if (event == EventType.TYPING_START) {
 			var typing:TypingPackage = data;
 			var channel:Channel = client.getChannel(typing.channel_id);
+			var timestamp:DateTime = null;
+			if (typing.timestamp != null) timestamp = DateTime.fromString(typing.timestamp);
 			if (channel != null) {
 				var member:Member = channel.guild.getMember(typing.user_id);
 				if (member != null) {
-					for (listener in listeners) { listener.onTyping(channel, member); }
+					for (listener in listeners) { listener.onTyping(channel, member, timestamp); }
 				}
 			}
 		} else if (event == EventType.USER_UPDATE) {
@@ -410,9 +434,7 @@ class APIWebSocket
 		}
 		
 		/* TODO: 
-		 *    User Settings Update event
-		 *    Presence Update
-		 *    Resumed?
+		 *    User Settings Update event - don't know what to do with this
 		 */ 
 	}
 	
@@ -425,15 +447,18 @@ class APIWebSocket
 	}
 	
 	private function handleResponseHello(response:BaseResponse) {
-		trace("hello recieved");
 		var data:HelloData = response.d;
 		heartbeatInterval = data.heartbeat_interval / 1000;
-		lastHeartbeat = Sys.cpuTime();
+		lastHeartbeat = Sys.time();
+		trace('hello recieved $heartbeatInterval | ${data.heartbeat_interval}');
 	}
 	
 	private function handleResponseInvalidSession(response:BaseResponse) {
 		trace("invalid session, disconnecting");
+		shouldResume = false;
+		// completely reconnect the websocket
 		websocket.disconnect();
+		websocket.connect();
 	}
 	
 	private function handleResponseHeartbeatACK(response:BaseResponse) {

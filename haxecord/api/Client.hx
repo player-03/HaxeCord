@@ -78,9 +78,9 @@ class Client implements FutureFactory
 		return messageHistory.get(id);
 	}
 	
-	public function sendMessage(destination:String, message:String, ?callback:Void->Void, ?error:HTTPException->Void):Future
+	public function sendMessage(destination:String, message:String, ?callback:Message->Void, ?error:HTTPException->Void):Future
 	{
-		var future:Future = http.sendChannelMessage(destination, message, callback, error);
+		var future:Future = http.createMessage(destination, {"content": message}, callback, error);
 		if (boundFuture != null) boundFuture.setChild(future);
 		future.factory = this;
 		return future;

@@ -1,9 +1,10 @@
 package haxecord.api.data;
 
 typedef InvitePackage = {
-	var code:String,
-	var guild:Dynamic,
-	var channel:Dynamic
+	var code:String;
+	var guild:Dynamic;
+	var channel:Dynamic;
+	@:optional var metadata:Dynamic;
 }
 
 /**
@@ -15,6 +16,7 @@ class Invite
 	public var code(default, null):String;
 	public var guild(default, null):InviteGuild;
 	public var channel(default, null):InviteChannel;
+	public var metadata(default, null):InviteMetadata = null;
 
 	public function new(data:Dynamic) 
 	{
@@ -26,6 +28,7 @@ class Invite
 		this.code = data.code;
 		this.guild = new InviteGuild(data.guild);
 		this.channel = new InviteChannel(data.channel);
+		if (data.metadata != null) this.metadata = new InviteMetadata(data.metadata);
 	}
 	
 }

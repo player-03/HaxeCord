@@ -10,6 +10,7 @@ import haxecord.api.data.Role;
 import haxecord.api.data.User;
 import haxecord.api.data.VoiceChannel;
 import haxecord.api.data.VoiceState;
+import haxecord.utils.DateTime;
 
 /**
  * ...
@@ -25,6 +26,7 @@ class APIEventListener
 	}
 	
 	public function onReady():Void {}
+	public function onResume():Void {}
 	public function onChannelCreate(channel:BaseChannel):Void {}
 	public function onChannelUpdate(channel:BaseChannel):Void {}
 	public function onChannelDelete(channel:BaseChannel):Void {}
@@ -45,7 +47,7 @@ class APIEventListener
 	public function onMessage(message:Message):Void {}
 	public function onMessageEdit(message:Message):Void {}
 	public function onMessageDelete(message:Message):Void {}
-	public function onTyping(channel:Channel, member:Member):Void {}
+	public function onTyping(channel:Channel, member:Member, timestamp:DateTime):Void {}
 	public function onUserUpdate(user:User):Void {}
 	public function onVoiceStateUpdate(voiceState:VoiceState):Void {}
 	public function onVoiceServerUpdate(guild:Guild):Void {}

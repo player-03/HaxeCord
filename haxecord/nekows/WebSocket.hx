@@ -4,6 +4,8 @@ import haxe.crypto.Sha1;
 import haxe.io.Bytes;
 import haxe.io.BytesBuffer;
 import haxe.io.BytesOutput;
+import haxe.io.Eof;
+import haxe.io.Error;
 import haxecord.http.URL;
 import sys.net.Host;
 
@@ -13,6 +15,7 @@ private typedef AbstractSocket = {
 
   function connect(host:Host, port:Int):Void;
   function setTimeout(t:Float):Void;
+  function setBlocking(b:Bool):Void;
   function write(str:String):Void;
   function close():Void;
   function shutdown(read:Bool, write:Bool):Void;
@@ -57,6 +60,7 @@ class WebSocket
 	private var sendQueue:Array<WebSocketFrame> = new Array<WebSocketFrame>();
 	
 	private var awaitingHandshake:Bool = true;
+	private var blocking:Bool = false;
 	
 	public var onMessage:WebSocketMessage-> Void;
 	public var onClose:WebSocket->Bool;
@@ -65,7 +69,7 @@ class WebSocket
 	public var onConnect:WebSocket->Void;
 	public var onUpdate:WebSocket->Void;
 	
-	public function new(url:URL, ?origin:String) 
+	public function new(url:URL, ?origin:String, ?blocking:Bool) 
 	{
 		this.url = url;
 		if (url.isSSL()) {
@@ -73,6 +77,7 @@ class WebSocket
 		}
 		
 		this.origin = origin;
+		if (blocking != null) this.blocking = blocking;
 	}
 	
 	public function on(events:Map<String,Dynamic>) {
@@ -107,6 +112,7 @@ class WebSocket
 		}
 		
 		socket.connect(new Host(url.host), url.getPort());
+		socket.setBlocking(blocking);
 		
 		if (url.isSSL()) {
 			cast(socket, SocketSSL).handshake();
@@ -127,15 +133,17 @@ class WebSocket
 		socket = null;
 		frameQueue = new Array<WebSocketFrame>();
 		awaitingHandshake = true;
+		secKey = null;
 		
 		// if onClose returns true, we need to attempt to reconnect
 		if (onClose != null) {
-			if (onClose(this)) connect;
+			if (onClose(this)) connect();
 		}
 	}
 	
 	public function update(?doFrameRead:Bool)
 	{
+		//trace(" UPDATING ");
 		if (doFrameRead == null) doFrameRead = true;
 		try {
 			if (awaitingHandshake)
@@ -156,6 +164,7 @@ class WebSocket
 					if (frame.opcode == OpCode.CLOSE) {
 						var closeStatus:Int = (frame.data.get(0) << 8) + frame.data.get(1);
 						log('CLOSED WITH STATUS: $closeStatus', 4);
+						log('CLOSED BYTES: ${frame.data}');
 						
 						for (i in 0...frame.data.length) {
 							var closeStatus:Int = frame.data.get(i);
@@ -206,7 +215,12 @@ class WebSocket
 					}
 				}
 			}
+		} catch ( eof:Eof ) {
+			// don't need to pass eof errors
 		} catch ( source:Dynamic ) {
+			if (source == Error.Blocked) { 
+				return; // we can ignore blocked errors
+			}
 			if (onError != null) onError(this, source);
 		}
 	}
@@ -251,12 +265,12 @@ class WebSocket
 	
 	public function log(msg:String, ?index:Int)
 	{
-		//if (index == 3) trace(msg);
+		if (index == 4) trace(msg);
 	}
 	
 	public function recieveHandshake()
 	{
-		trace("awaiting handshake...");
+		log("awaiting handshake...", 0);
 		var line:String = "";
 		while ((line = socket.input.readLine()) != "") {
 			//trace('line: $line');
@@ -288,7 +302,7 @@ class WebSocket
 				}
 			}
 		}
-		trace("handshake over");
+		log("handshake over", 0);
 		
 	}
 	

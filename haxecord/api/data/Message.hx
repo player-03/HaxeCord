@@ -1,5 +1,6 @@
 package haxecord.api.data;
 import haxecord.api.Client;
+import haxecord.utils.DateTime;
 import neko.net.ServerLoop;
 
 typedef MessagePackage = {
@@ -43,8 +44,8 @@ class Message
 	
 	public var author(default, null):User;
 	public var content(default, null):String;
-	public var timestamp(default, null):String; // TODO: convert to timestamp
-	public var editedTimestamp(default, null):String; // TODO: convert to timestamp
+	public var timestamp(default, null):DateTime; // TODO: convert to timestamp
+	public var editedTimestamp(default, null):DateTime; // TODO: convert to timestamp
 	public var tts(default, null):Bool;
 	public var mentionEveryone(default, null):Bool;
 	public var mentions(default, null):Array<User>;
@@ -79,8 +80,8 @@ class Message
 		}
 		
 		this.content = data.content; 
-		this.timestamp = data.timestamp;
-		this.editedTimestamp = data.edited_timestamp;
+		if (data.timestamp != null) this.timestamp = DateTime.fromString(data.timestamp);
+		if (data.edited_timestamp != null) this.editedTimestamp = DateTime.fromString(data.edited_timestamp);
 		this.tts = data.tts;
 		this.mentionEveryone = data.mention_everyone;
 		
@@ -141,8 +142,8 @@ class Message
 		}
 		
 		if (data.content != null) this.content = data.content; 
-		if (data.timestamp != null) this.timestamp = data.timestamp;
-		if (data.edited_timestamp != null) this.editedTimestamp = data.edited_timestamp;
+		if (data.timestamp != null) this.timestamp = DateTime.fromString(data.timestamp);
+		if (data.edited_timestamp != null) this.editedTimestamp = DateTime.fromString(data.edited_timestamp);
 		if (data.tts != null) this.tts = data.tts;
 		if (data.mention_everyone != null) this.mentionEveryone = data.mention_everyone;
 		

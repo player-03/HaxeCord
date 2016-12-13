@@ -1,8 +1,8 @@
 package haxecord.api.data;
 
 typedef IntegrationAccountPackage = {
-	var id:String,
-	var name:String
+	var id:String;
+	var name:String;
 }
 
 /**

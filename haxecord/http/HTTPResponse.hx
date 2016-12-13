@@ -1,5 +1,6 @@
 package haxecord.http;
 import haxe.io.Bytes;
+import haxe.Json;
 
 /**
  * ...
@@ -20,6 +21,11 @@ class HTTPResponse
 		this.content = content;
 		this.contentLength = contentLength;
 		this.headers = headers;
+	}
+	
+	public function getJson():Dynamic
+	{
+		return Json.parse(content.toString());
 	}
 	
 }

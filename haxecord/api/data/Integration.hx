@@ -1,17 +1,17 @@
 package haxecord.api.data;
 
 typedef IntegrationPackage = {
-	var id:String,
-	var name:String,
-	var type:String,
-	var enabled:Bool,
-	var syncing:Bool,
-	var role_id:String,
-	var expire_behavior:Int,
-	var expire_grace_period:Int,
-	var user:Dynamic,
-	var account:Dynamic,
-	var synced_at:String
+	var id:String;
+	var name:String;
+	var type:String;
+	var enabled:Bool;
+	var syncing:Bool;
+	var role_id:String;
+	var expire_behavior:Int;
+	var expire_grace_period:Int;
+	var user:Dynamic;
+	var account:Dynamic;
+	var synced_at:String;
 }
 
 /**

@@ -1,4 +1,5 @@
 package haxecord.api.data;
+import haxecord.utils.DateTime;
 
 
 typedef UnavailableGuild = {
@@ -81,7 +82,7 @@ class Guild
 	public var iconHash(default, null):String;
 	public var splashHash(default, null):String;
 	
-	public var ownerID(default, null):String;
+	private var ownerID:String;
 	public var owner(get, null):Member;
 	private var _owner:Member = null;
 	function get_owner() {
@@ -98,7 +99,7 @@ class Guild
 	
 	public var region(default, null):String;
 	
-	public var afkChannelID(default, null):String;
+	private var afkChannelID:String;
 	public var afkChannel(get, null):Channel;
 	private var _afkChannel:Channel = null;
 	function get_afkChannel() {
@@ -116,7 +117,7 @@ class Guild
 	public var afkTimeout(default, null):Int;
 	public var embedEnabled(default, null):Bool;
 	
-	public var embedChannelID(default, null):String;
+	private var embedChannelID:String;
 	public var embedChannel(get, null):Channel;
 	private var _embedChannel:Channel = null;
 	function get_embedChannel() {
@@ -137,7 +138,7 @@ class Guild
 	public var emojis(default, null):Array<Emoji>;
 	public var features(default, null):Array<String>;
 	public var mfaLevel(default, null):Int;
-	public var joinedAt(default, null):String; // TODO: convert to datetime
+	public var joinedAt(default, null):DateTime;
 	public var large(default, null):Bool;
 	public var memberCount(default, null):Int;
 	public var members(default, null):Array<Member>;
@@ -193,7 +194,7 @@ class Guild
 			this.memberCount = data.member_count;
 			
 			if (data.joined_at != null) { // initial package
-				this.joinedAt = data.joined_at;
+				this.joinedAt = DateTime.fromString(data.joined_at);
 				this.large = data.large;
 				
 				this.members = new Array<Member>();
@@ -339,6 +340,14 @@ class Guild
 			if (vc.member.id == userid) return vc;
 		}
 		return null;
+	}
+	
+	public function hasChannel(channelID:String):Bool
+	{
+		for (channel in channels) {
+			if (channel.id == channelID) return true;
+		}
+		return false;
 	}
 	
 }

@@ -1,14 +1,14 @@
 package haxecord.api.data;
 
 typedef VoiceRegionPackage = {
-	var id:String,
-	var name:String,
-	var sample_hostname:String,
-	var sample_port:Int,
-	var vip:Bool,
-	var optimal:Bool,
-	var deprecated:Bool,
-	var custom:Bool
+	var id:String;
+	var name:String;
+	var sample_hostname:String;
+	var sample_port:Int;
+	var vip:Bool;
+	var optimal:Bool;
+	var deprecated:Bool;
+	var custom:Bool;
 }
 
 /**

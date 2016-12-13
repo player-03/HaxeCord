@@ -1,4 +1,5 @@
 package haxecord.api.data;
+import haxecord.utils.DateTime;
 
 typedef InviteMetadataPackage = {
 	inviter:Dynamic,
@@ -21,7 +22,7 @@ class InviteMetadata
 	public var max_uses(default, null):Int;
 	public var max_age(default, null):Int;
 	public var temporary(default, null):Bool;
-	public var createdAt(default, null):String; // TODO: convert to datetime
+	public var createdAt(default, null):DateTime;
 	public var revoked(default, null):Bool;
 
 	public function new(data:Dynamic) 
@@ -36,7 +37,7 @@ class InviteMetadata
 		this.max_uses = data.max_uses;
 		this.max_age = data.max_age;
 		this.temporary = data.temporary;
-		this.createdAt = data.created_at; // TODO: parse datetime
+		if (data.created_at != null) this.createdAt = DateTime.fromString(data.created_at);
 		this.revoked = data.revoked;
 	}
 	

@@ -1,4 +1,5 @@
 package haxecord.api.data;
+import haxecord.utils.DateTime;
 
 typedef MemberPackage = {
 	var user:Dynamic;
@@ -27,16 +28,21 @@ class Member extends User
 	
 	public var nick(default, null):String;
 	public var roles(default, null):Array<Role>;
-	public var joined_at(default, null):String; // TODO: parse datetime
+	public var joinedAt(default, null):DateTime;
 	public var deaf(default, null):Bool;
 	public var mute(default, null):Bool;
 	public var guild(default, null):Guild;
+	
+	public var isPartial(default, null):Bool;
 
-	public function new(guild:Guild, data:MemberPackage) 
+	public function new(guild:Guild, data:MemberPackage, ?partial:Bool) 
 	{
+		if (partial == null) partial = false;
+		isPartial = partial;
+		
 		super(data.user);
 		this.guild = guild;
-		parseMemberData(data);
+		if (partial != true) parseMemberData(data);
 	}
 	
 	private function parseMemberData(data:MemberPackage)
@@ -51,7 +57,7 @@ class Member extends User
 			}
 		}
 		
-		this.joined_at = data.joined_at;
+		if (data.joined_at != null) this.joinedAt = DateTime.fromString(data.joined_at);
 		this.deaf = data.deaf;
 		this.mute = data.mute;
 	}

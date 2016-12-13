@@ -2,9 +2,9 @@ package haxecord.api.data;
 import haxecord.api.data.BaseChannel.ChannelType;
 
 typedef InviteChannelPackage = {
-	var id:String,
-	var name:String,
-	var type:String
+	var id:String;
+	var name:String;
+	var type:String;
 }
 
 /**

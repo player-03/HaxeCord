@@ -1,4 +1,6 @@
 package haxecord.async;
+import haxecord.async.cancels.TimeoutCancel;
+import haxecord.async.events.Callback;
 
 /**
  * ...
@@ -46,13 +48,16 @@ class Future
 		}
 	}
 	
-	public function then()
+	public function then(?func:Void->Void, ?timeout:Float):Dynamic
 	{
-		if (factory != null)
-		{
-			factory.bindFuture(this);
+		if (func != null) {
+			return new Future(loop, new Callback(func), timeout, this, factory);
+		} else {
+			if (factory != null) {
+				factory.bindFuture(this);
+			}
+			return factory;
 		}
-		return factory;
 	}
 	
 	private function finish()
@@ -75,7 +80,7 @@ class Future
 			event.asyncCallback();
 			finish();
 		}
-		else if (loop.time() > timeout)
+		else if (timeout != null && loop.time() > timeout)
 		{
 			cancelled = true;
 			event.asyncCancel(new TimeoutCancel());
@@ -85,6 +90,7 @@ class Future
 	
 	public function start()
 	{
+		if (timeout != null) timeout = loop.time() + timeout;
 		event.asyncStart(this);
 	}
 	

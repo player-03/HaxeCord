@@ -1,4 +1,5 @@
 package haxecord.async;
+import haxecord.async.cancels.ClosureCancel;
 /**
  * ...
  * @author Billyoyo
@@ -25,9 +26,18 @@ class EventLoop
 		}
 	}
 	
+	public function close()
+	{
+		var cancel:ClosureCancel = new ClosureCancel();
+		for (future in futures)
+		{
+			future.cancel(cancel);
+		}
+	}
+	
 	public function time():Float
 	{
-		return Sys.cpuTime();
+		return Sys.time();
 	}
 	
 	public function addFuture(future:Future)

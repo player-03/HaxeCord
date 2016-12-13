@@ -1,10 +1,10 @@
 package haxecord.api.data;
 
 typedef InviteGuildPackage = {
-	var id:String,
-	var name:String,
-	var splash:String,
-	var icon:String
+	var id:String;
+	var name:String;
+	var splash:String;
+	var icon:String;
 }
 
 /**

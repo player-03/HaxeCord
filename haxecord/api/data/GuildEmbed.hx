@@ -1,8 +1,8 @@
 package haxecord.api.data;
 
 typedef GuildEmbedPackage = {
-	var enabled:Bool,
-	var channel_id:String
+	var enabled:Bool;
+	var channel_id:String;
 }
 
 /**
@@ -11,7 +11,7 @@ typedef GuildEmbedPackage = {
  */
 class GuildEmbed
 {
-	public var guild:Guild(default, null):Guild;
+	public var guild(default, null):Guild;
 	public var enabled(default, null):Bool;
 	public var channel(default, null):Channel;
 	

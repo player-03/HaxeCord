@@ -1,6 +1,8 @@
 package haxecord.http;
 import haxe.io.Bytes;
 import haxe.io.BytesBuffer;
+import haxe.io.Eof;
+import haxe.io.Error;
 import haxecord.async.AsyncEvent;
 import haxecord.async.Cancel;
 import haxecord.async.Future;
@@ -14,6 +16,7 @@ private typedef AbstractSocket = {
 
   function connect(host:Host, port:Int):Void;
   function setTimeout(t:Float):Void;
+  function setBlocking(b:Bool):Void;
   function write(str:String):Void;
   function close():Void;
   function shutdown(read:Bool, write:Bool):Void;
@@ -57,7 +60,7 @@ class HTTPRequest implements AsyncEvent
 	public var url:URL;
 	private var httpVersion:String = "1.1";
 	private var httpMethod:String = "GET";
-	private var httpUserAgent:String = "haxecord-billyoyo";
+	private var httpUserAgent:String = "haxecord-billyoyo/0.1";
 	private var httpHost:String = "";
 	private var httpHeaders:Map<String, String> = new Map<String, String>();
 	private var httpContent:Dynamic = null;
@@ -91,7 +94,6 @@ class HTTPRequest implements AsyncEvent
 	public function new(url:URL, ?debug:Bool) 
 	{
 		this.url = url;
-		
 		if (debug != null)
 		{
 			this.debug = debug;
@@ -243,6 +245,7 @@ class HTTPRequest implements AsyncEvent
 			}
 		
 			socket.connect(new Host(url.host), url.getPort());
+			socket.setBlocking(false);
 			socketConnected = true;
 			log("socket connected");
 		} catch ( source:Dynamic ) {
@@ -295,7 +298,14 @@ class HTTPRequest implements AsyncEvent
 		var line:String = "";
 		try {
 			line = StringTools.ltrim(socket.input.readLine());
-        } catch (source:Dynamic) {
+		} catch (source:Eof) {
+			// we can ignore EoF
+			return;
+		} catch (source:Dynamic) {
+			if (source == Error.Blocked) { 
+				return; // we can ignore blocked errors
+			}
+			log('SOURCE: $source');
 			// error (probably unexpected connection terminated)
 			responseError = new HTTPException(source, 'Failed to read header', 0);
 			line = '';
@@ -307,7 +317,7 @@ class HTTPRequest implements AsyncEvent
 				log("Unexpected socket closure");
 			}
 			socketConnected = false;
-        }
+		}
 		
 		if (line == "") {
 			responseHeadersCompleted = true;
@@ -315,16 +325,15 @@ class HTTPRequest implements AsyncEvent
 		}
 		
 		if (responseStatus == 0) {
-          var r = ~/^HTTP\/\d+\.\d+ (\d+)/;
-          r.match(line);
-          responseStatus = Std.parseInt(r.matched(1));
-        } else {
-          var a = line.split(':');
-          var key = a.shift().toLowerCase();
-          responseHeaders.set(key, StringTools.ltrim(a.join(':')));
+		  var r = ~/^HTTP\/\d+\.\d+ (\d+)/;
+		  r.match(line);
+		  responseStatus = Std.parseInt(r.matched(1));
+		} else {
+		  var a = line.split(':');
+		  var key = a.shift().toLowerCase();
+		  responseHeaders.set(key, StringTools.ltrim(a.join(':')));
 		}
-		
-	}
+}
 	
 	public function readContent()
 	{
@@ -403,7 +412,7 @@ class HTTPRequest implements AsyncEvent
 								responseContentBuffer = null;
 								responseCompleted = true;
 							} else {
-								var bytes = socket.input.read(chunk);
+								var bytes:Bytes = socket.input.read(chunk);
 								responseContentBytesLoaded += chunk;
 								responseContentBuffer.add(bytes);
 								socket.input.read(2);
@@ -419,7 +428,12 @@ class HTTPRequest implements AsyncEvent
 					}
 				
 			}
+		} catch (source:Eof) {
+			// we can ignore eof errors
 		} catch (source:Dynamic) {
+			if (source == Error.Blocked) { 
+				return; // we can ignore blocked errors
+			}
 			responseError = new HTTPException(source, "Failed to read content (generic)", 0);
 			responseStatus = 0;
 			responseCompleted = true;
@@ -462,11 +476,13 @@ class HTTPRequest implements AsyncEvent
 	
 	public function asyncCallback() 
 	{
-		trace("got callback");
+		log("got callback");
 		if (responseError != null) {
+			log('error! $responseError');
 			// error was encountered :(
 			if (callbackError != null) callbackError(this, responseError);
 		} else {
+			log("got response");
 			if (socketConnected) {
 				socket.close();
 			}
