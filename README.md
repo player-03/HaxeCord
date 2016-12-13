@@ -34,6 +34,7 @@ This library is very early in development, expect bugs and missing functionality
     }
 
 ## TODO
+  - Add equivelant methods in Client to all the methods in APIHTTP
   - Create the `Embed` data class
   - Properly create the `Permissions` and `Colour` data classes
   - Properly test the dispatch events and data class creation
