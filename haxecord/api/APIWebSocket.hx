@@ -196,12 +196,12 @@ class APIWebSocket
 			} else if (BaseChannel.isVoiceChannel(data)) {
 				var guild:Guild = client.getGuild(BaseChannel.getGuildID(data));
 				var voiceChannel:VoiceChannel = new VoiceChannel(guild, data);
-				guild.voiceChannels.push(voiceChannel);
+				if (guild != null) guild.voiceChannels.push(voiceChannel);
 				channel = voiceChannel;
 			} else {
 				var guild:Guild = client.getGuild(BaseChannel.getGuildID(data));
 				var textChannel:Channel = new Channel (guild, data);
-				guild.channels.push(textChannel);
+				if (guild != null) guild.channels.push(textChannel);
 				channel = textChannel;
 			}
 			for (listener in listeners) { listener.onChannelCreate(channel); }

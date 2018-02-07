@@ -107,6 +107,7 @@ class Client implements FutureFactory
 	}
 	
 	public function getGuild(id:String):Guild {
+		if (id == null) return null;
 		return guilds.get(id);
 	}
 	
