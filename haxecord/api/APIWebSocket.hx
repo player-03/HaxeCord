@@ -81,13 +81,18 @@ class APIWebSocket
 		};
 		// handle messages
 		websocket.onMessage = function(msg:WebSocketMessage):Void {
+			var response:BaseResponse = null;
 			try {
-				var payload = msg.getJson();
-				var response:BaseResponse = payload;
+				response = msg.getJson();
+			} catch ( source:Dynamic ) {
+				trace('error encountered parsing message: ${msg.data}, $source\n\n');
+				return;
+			}
+			try {
 				if (response.s != null) heartbeatSequence = response.s;
 				handleResponse(response);
 			} catch ( source:Dynamic ) {
-				trace('error encountered parsing message: ${msg.data}, $source\n\n');
+				trace('error encountered handling response: ${response}, $source\n\n');
 			}
 		};
 		// not sure what to do on error, just print it for now
