@@ -43,7 +43,7 @@ typedef ReadyPackage = {
 typedef TypingPackage = {
 	var channel_id:String;
 	var user_id:String;
-	var timestamp:String;
+	var timestamp:Int;
 }
 
 /**
@@ -380,7 +380,7 @@ class APIWebSocket
 			var typing:TypingPackage = data;
 			var channel:Channel = client.getChannel(typing.channel_id);
 			var timestamp:DateTime = null;
-			if (typing.timestamp != null) timestamp = DateTime.fromString(typing.timestamp);
+			if (typing.timestamp != null) timestamp = DateTime.fromFloat(typing.timestamp);
 			if (channel != null) {
 				var member:Member = channel.guild.getMember(typing.user_id);
 				if (member != null) {
