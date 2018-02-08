@@ -50,10 +50,10 @@ class Client implements FutureFactory
 		else return y;
 	}
 
-	public function new(?messageLimit:Int) 
+	public function new(?messageLimit:Int, ?limiter:Float) 
 	{
 		if (messageLimit != null) messageHistoryLimit = min(100, messageLimit);
-		loop = new EventLoop();
+		loop = new EventLoop(limiter);
 		http = new APIHTTP(this, loop);
 	}
 	
