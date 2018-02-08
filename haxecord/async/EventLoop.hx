@@ -1,5 +1,10 @@
 package haxecord.async;
 import haxecord.async.cancels.ClosureCancel;
+
+#if lime
+import lime.app.Application;
+#end
+
 /**
  * ...
  * @author Billyoyo
@@ -33,6 +38,10 @@ class EventLoop
 		{
 			future.cancel(cancel);
 		}
+		
+		#if lime
+		Application.current.onUpdate.remove(loop);
+		#end
 	}
 	
 	public function time():Float
@@ -75,6 +84,13 @@ class EventLoop
 		}
 	}
 	
+	#if lime
+	private function loop(elapsed:Int)
+	{
+		yield();
+	}
+	#end
+	
 	private function runWithLimiter()
 	{
 		while (futures.length > 0)
@@ -95,12 +111,15 @@ class EventLoop
 	
 	public function run()
 	{
+		#if lime
+		Application.current.onUpdate.add(loop);
+		#else
 		if (limiter > 0) {
 			runWithLimiter();
 		} else {
 			runWithoutLimiter();
 		}
-		
+		#end
 	}
 	
 }
