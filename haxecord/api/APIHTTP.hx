@@ -571,7 +571,7 @@ class APIHTTP extends HTTP
 		}, error);
 	}
 	
-	public function modifyGuildRold(guildID:String, roleID:String, data:Dynamic, ?callback:Role->Void, ?error:HTTPException->Void):Future
+	public function modifyGuildRole(guildID:String, roleID:String, data:Dynamic, ?callback:Role->Void, ?error:HTTPException->Void):Future
 	{
 		return callAPI("patch", 'guilds/$guildID/roles/$roleID', data, function (resp:HTTPResponse) {
 			var data:Dynamic = resp.getJson();
