@@ -6,6 +6,7 @@ import haxe.io.BytesBuffer;
 import haxe.io.BytesOutput;
 import haxe.io.Eof;
 import haxe.io.Error;
+import haxe.PosInfos;
 import haxecord.http.URL;
 import sys.net.Host;
 
@@ -263,9 +264,9 @@ class WebSocket
 		awaitingHandshake = true;
 	}
 	
-	public function log(msg:String, ?index:Int)
+	public function log(msg:String, ?index:Int, ?posInfos:PosInfos)
 	{
-		if (index == 4) trace(msg);
+		if (index == 4) trace(msg, posInfos);
 	}
 	
 	public function recieveHandshake()
