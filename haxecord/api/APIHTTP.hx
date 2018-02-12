@@ -1,4 +1,5 @@
 package haxecord.api;
+import haxe.Http;
 import haxecord.api.data.BaseChannel;
 import haxecord.api.data.BaseChannel.VoiceChannelCheck;
 import haxecord.api.data.Channel;
@@ -17,28 +18,32 @@ import haxecord.api.data.VoiceChannel;
 import haxecord.api.data.VoiceRegion;
 import haxecord.async.EventLoop;
 import haxecord.async.Future;
-import haxecord.http.HTTP;
-import haxecord.http.HTTPException;
 import haxecord.http.HTTPRequest;
-import haxecord.http.HTTPResponse;
 
 
 typedef PrunedPackage = {
 	var pruned:Int;
 }
 
+typedef OptionalRequestArgs = {
+	@:optional var headers:Map<String, String>;
+	@:optional var json:Dynamic;
+	@:optional var onComplete:String->Void;
+	@:optional var onError:String->Void;
+	@:optional var timeout:Float;
+}
+
 /**
  * ...
  * @author Billyoyo
  */
-class APIHTTP extends HTTP
+class APIHTTP
 {
 	
 	private var client:Client;
 	
-	public function new(client:Client, ?loop:EventLoop)
+	public function new(client:Client)
 	{
-		super(loop);
 		this.client = client;
 	}
 	
@@ -62,7 +67,28 @@ class APIHTTP extends HTTP
 			});
 		}
 	}
-
+	
+	private function request(method:String, url:String, ?options:OptionalRequestArgs):Future
+	{
+		var http:Http = new Http(url);
+		
+		if (options.headers != null) {
+			for (header in options.headers.keys()) {
+				http.setHeader(header, options.headers[header]);
+			}
+		}
+		if (options.json != null) {
+			http.setPostData(Json.stringify(options.json));
+			http.addHeader("Content-Type", "application/json");
+		}
+		if (options.onComplete != null) http.onData = options.onComplete;
+		if (options.onError != null) http.onError = options.onError;
+		
+		var request:HTTPRequest = new HTTPRequest(http, method);
+		
+		return new Future(loop, request, options.timeout, boundFuture, this);
+	}
+	
 	public function getChannel(channelID:String, ?callback:BaseChannel->Void, ?error:HTTPException->Void):Future
 	{
 		return callAPI("get", 'channels/$channelID', null, function(resp:HTTPResponse) {
