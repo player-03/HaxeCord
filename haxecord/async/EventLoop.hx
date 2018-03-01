@@ -1,9 +1,7 @@
 package haxecord.async;
-import haxecord.async.cancels.ClosureCancel;
 
-#if lime
-import lime.app.Application;
-#end
+import haxe.Timer;
+import haxecord.async.cancels.ClosureCancel;
 
 /**
  * ...
@@ -13,7 +11,7 @@ class EventLoop
 {
 	
 	private var futures:Array<Future> = new Array<Future>();
-	private var limiter:Float = 0;
+	private var timer:Timer;
 	
 	public static function chain(futures:Array<Future>):Future {
 		var lastFuture:Future = null;
@@ -24,11 +22,10 @@ class EventLoop
 		return lastFuture;
 	}
 	
-	public function new(?limiter:Float) 
+	public function new(?loopTime:Float = 0.05) 
 	{
-		if (limiter != null) {
-			this.limiter = limiter;
-		}
+		timer = new Timer(loopTime);
+		timer.run = update;
 	}
 	
 	public function close()
@@ -38,12 +35,9 @@ class EventLoop
 		{
 			future.cancel(cancel);
 		}
-		
-		#if lime
-		Application.current.onUpdate.remove(loop);
-		#end
+		timer.stop();
 	}
-	
+
 	public function time():Float
 	{
 		return Sys.time();
@@ -55,23 +49,20 @@ class EventLoop
 		future.start();
 	}
 	
-	public function addTask(event:AsyncEvent, ?timeout:Float) {
+	public function addTask(event:AsyncEvent, ?timeout:Float)
+	{
 		var future:Future = createTask(event, timeout);
 		addFuture(future);
 		return future;
 	}
 	
-	public function createTask(event:AsyncEvent, ?timeout:Float) {
+	public function createTask(event:AsyncEvent, ?timeout:Float)
+	{
 		return new Future(this, event, timeout);
-		
 	}
 	
-	public function yield(?future:Future) {
-		if (future != null) {
-			addFuture(future);
-		}
-		
-		
+	private function update()
+	{
 		var i:Int = 0;
 		while (i < futures.length) {
 			var future:Future = futures[i];
@@ -82,44 +73,6 @@ class EventLoop
 			}
 			i++;
 		}
-	}
-	
-	#if lime
-	private function loop(elapsed:Int)
-	{
-		yield();
-	}
-	#end
-	
-	private function runWithLimiter()
-	{
-		while (futures.length > 0)
-		{
-			yield();
-			Sys.sleep(limiter);
-		}
-	}
-	
-	private function runWithoutLimiter()
-	{
-		while (futures.length > 0)
-		{
-			yield();
-			
-		}
-	}
-	
-	public function run()
-	{
-		#if lime
-		Application.current.onUpdate.add(loop);
-		#else
-		if (limiter > 0) {
-			runWithLimiter();
-		} else {
-			runWithoutLimiter();
-		}
-		#end
 	}
 	
 }

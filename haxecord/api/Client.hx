@@ -10,10 +10,7 @@ import haxecord.async.EventLoop;
 import haxecord.api.APIWebSocket;
 import haxecord.async.Future;
 import haxecord.async.FutureFactory;
-import haxecord.http.HTTP;
-import haxecord.http.HTTPException;
 import haxecord.http.HTTPRequest;
-import haxecord.http.HTTPResponse;
 import haxecord.api.data.Message;
 import haxe.Json;
 
@@ -78,7 +75,7 @@ class Client implements FutureFactory
 		return messageHistory.get(id);
 	}
 	
-	public function sendMessage(destination:String, message:String, ?callback:Message->Void, ?error:HTTPException->Void):Future
+	public function sendMessage(destination:String, message:String, ?callback:Message->Void, ?error:String->Void):Future
 	{
 		var future:Future = http.createMessage(destination, {"content": message}, callback, error);
 		if (boundFuture != null) boundFuture.setChild(future);
@@ -162,14 +159,12 @@ class Client implements FutureFactory
 		this.token = token;
 		this.shard = shard;
 		this.shardCount = shardCount;
-		//var resp:HTTPResponse = http.get(""
 		
 		websocket = new APIWebSocket(this, "wss://gateway.discord.gg/?v=6&encoding=json");
 		websocket.addListeners(tempListeners);
 		tempListeners = null;
 		
 		websocket.start(loop);
-		loop.run();
 	}
 	
 	public function bindFuture(future:Future)

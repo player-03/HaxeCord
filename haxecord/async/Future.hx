@@ -19,7 +19,8 @@ class Future
 	private var done:Bool = false;
 	private var cancelled:Bool = false;
 	private var cancelReason:Cancel = null;
-	private var timeout:Float;
+	private var startTime:Float;
+	public var timeout(default, null):Null<Float>;
 	
 	public function new(loop:EventLoop, event:AsyncEvent, ?timeout:Float, ?parent:Future, ?factory:FutureFactory) 
 	{
@@ -80,7 +81,7 @@ class Future
 			event.asyncCallback();
 			finish();
 		}
-		else if (timeout != null && loop.time() > timeout)
+		else if (timeout != null && loop.time() > startTime + timeout)
 		{
 			cancelled = true;
 			event.asyncCancel(new TimeoutCancel());
@@ -90,7 +91,7 @@ class Future
 	
 	public function start()
 	{
-		if (timeout != null) timeout = loop.time() + timeout;
+		if (timeout != null) startTime = loop.time();
 		event.asyncStart(this);
 	}
 	
