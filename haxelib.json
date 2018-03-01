@@ -1,0 +1,11 @@
+{
+  "name": "HaxeCord",
+  "url" : "https://github.com/billy-yoyo/HaxeCord",
+  "license": "MIT",
+  "tags": [],
+  "description": "Discord API for Haxe neko",
+  "version": "0.9.0",
+  "releasenote": "Incomplete, perhaps permanently.",
+  "contributors": ["billy-yoyo"],
+  "dependencies": {}
+}
